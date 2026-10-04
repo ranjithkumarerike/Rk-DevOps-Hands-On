@@ -1,19 +1,19 @@
 variable "region" {
-  description = "AWS region to deploy resources"
-  type        = string
+  default = "ap-south-1"
 }
 
 variable "ami_id" {
-  description = "AMI ID for the EC2 instance"
-  type        = string
+  default = "ami-08e3b3155fc937a94"
 }
 
 variable "instance_type" {
-  description = "EC2 instance type"
-  type        = string
+  default = "t3.micro"
 }
 
 variable "name" {
-  description = "EC2 instance Name tag"
-  type        = string
+  default = "Terraform-EC2"
+}
+
+variable "vpc_id" {
+  default = "vpc-07b4261bc6dee39fa"
 }
