@@ -1,0 +1,22 @@
+name: Centralized Deployment Workflow
+
+on:
+  workflow_call:
+    outputs:
+      deployment_url:
+        description: Deployment URL
+        value: ${{ jobs.deploy-job.outputs.deployment_url }}
+
+jobs:
+  deploy-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Application
+        id: deploy
+        run: |
+          echo "Deploying application..."
+          sleep 3
+          echo "deployment_url=https://cwvj-demo.com" >> $GITHUB_OUTPUT
+
+    outputs:
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}

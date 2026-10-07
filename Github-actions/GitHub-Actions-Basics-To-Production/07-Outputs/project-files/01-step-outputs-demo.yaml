@@ -1,0 +1,27 @@
+name: 01 - Step Outputs Demo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deployment-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Application
+        id: deploy
+        run: |
+          echo "Deploying application..."
+          sleep 3
+          echo "deployment_url=https://cwvj-demo.com" >> $GITHUB_OUTPUT
+
+      - name: Display Deployment Details
+        run: |
+          echo "Application deployed successfully."
+          echo "Deployment URL:"
+          echo "${{ steps.deploy.outputs.deployment_url }}"
+
+      - name: Send Deployment Notification
+        run: |
+          echo "Sending notification..."
+          echo "Application URL: ${{ steps.deploy.outputs.deployment_url }}"
+          echo "Notification sent successfully."
