@@ -1,0 +1,21 @@
+name: Rk Flask App CI Pipeline
+on:
+  push:
+
+jobs:
+  flask-app-ci-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Docker Image
+        run: docker build -t rk-flask-app:v1.0.0 .
+
+      - name: Run Container
+        run: docker run -d -p 5000:5000 --name rk-flask-container rk-flask-app:v1.0.0
+
+      - name: Smoke Test
+        run: |
+          sleep 5
+          curl http://localhost:5000/health
