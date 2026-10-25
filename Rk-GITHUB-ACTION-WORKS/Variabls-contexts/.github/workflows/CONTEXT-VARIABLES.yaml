@@ -1,0 +1,62 @@
+name: 02 - Expressions Variables Contexts Demo
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*
+
+env:
+  APPLICATION_NAME: payment-service
+  DEPLOYMENT_ENVIRONMENT: production
+  AWS_REGION: ap-south-1
+
+jobs:
+  demo-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print Variables Contexts and Expressions
+        run: |
+          echo "========== DEFAULT VARIABLES =========="
+          echo "Event Name: $GITHUB_EVENT_NAME"
+          echo "Branch Name: $GITHUB_REF_NAME"
+          echo "Commit SHA: $GITHUB_SHA"
+          echo "Runner OS: $RUNNER_OS"
+
+          echo ""
+
+          echo "========== CUSTOM VARIABLES =========="
+          echo "Application Name: $APPLICATION_NAME"
+          echo "Deployment Environment: $DEPLOYMENT_ENVIRONMENT"
+          echo "AWS Region: $AWS_REGION"
+
+          echo ""
+
+          echo "========== CONTEXT VALUES =========="
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Runner OS Context: ${{ runner.os }}"
+
+          echo ""
+
+          echo "========== CONTEXT VS VARIABLES =========="
+          echo "Context Ref: ${{ github.ref }}"
+          echo "Variable Ref: $GITHUB_REF"
+
+          echo ""
+
+          echo "========== EXPRESSION EVALUATION =========="
+          echo "Is Main Branch: ${{ github.ref == 'refs/heads/main' }}"
+          echo "Is Feature Branch: ${{ startsWith(github.ref_name, 'feature/') }}"
+
+      - name: Demonstrate Feature Branch Condition
+        if: ${{ startsWith(github.ref_name, 'feature/') }}
+        run: |
+          echo "Feature branch detected successfully"
+
+      - name: Demonstrate Main Branch Condition
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          echo "Main branch deployment logic triggered"

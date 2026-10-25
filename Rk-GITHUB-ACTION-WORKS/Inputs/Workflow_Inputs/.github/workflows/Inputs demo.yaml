@@ -1,0 +1,88 @@
+name: 01 - Type 1 Workflow Inputs Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment Environment
+        required: true
+        type: choice
+        default: dev
+        options:
+          - dev
+          - qa
+          - prod
+
+      perform_smoke_test:
+        description: Execute Smoke Test
+        required: true
+        type: boolean
+        default: true
+
+env:
+  APPLICATION_NAME: rk-flask-app
+  DOCKER_USERNAME: rkdockerhub18
+  IMAGE_TAG: v1.0.1
+
+jobs:
+  flask-ci-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Display Input Values
+        run: |
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Perform Smoke Test: ${{ inputs.perform_smoke_test }}"
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          tags: ${{ env.DOCKER_USERNAME }}/${{ env.APPLICATION_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: QA Validation
+        if: ${{ inputs.environment == 'qa' }}
+        run: |
+          echo "Running QA validation checks..."
+          echo "Running security validation..."
+          echo "Running integration validation..."
+          echo "QA validation completed successfully."
+
+      - name: Login to DockerHub
+        if: ${{ inputs.environment != 'dev' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push Docker Image
+        if: ${{ inputs.environment != 'dev' }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ env.DOCKER_USERNAME }}/${{ env.APPLICATION_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Run Container
+        run: |
+          docker run -d \
+            -p 5000:5000 \
+            --name flask-container \
+            ${{ env.DOCKER_USERNAME }}/${{ env.APPLICATION_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Smoke Test
+        if: ${{ inputs.perform_smoke_test }}
+        run: |
+            sleep 5
+            curl http://localhost:5000/health
+            echo "Smoke test completed successfully."
+
+      - name: Deploy to Kubernetes
+        if: ${{ inputs.environment == 'prod' }}
+        run: |
+          echo "Deploying application to Production Kubernetes Cluster..."
+          echo "Deployment completed successfully."

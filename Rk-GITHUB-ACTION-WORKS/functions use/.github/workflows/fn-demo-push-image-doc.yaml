@@ -1,0 +1,85 @@
+name: 01 - Rk Flask Build Test Publish Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*
+    paths:
+      - app/**
+      - .github/workflows/**
+
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+env:
+  APPLICATION_NAME: rk-flask-app
+  DOCKER_USERNAME: rkdockerhub18
+
+jobs:
+  flask-build-test-publish-job:
+    runs-on: ubuntu-latest
+
+    if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'feature/')) || (github.event_name == 'pull_request' && github.base_ref == 'main' && !contains(github.event.pull_request.title, 'WIP')) }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Generate Dynamic Image Tag
+        run: |
+          echo "IMAGE_TAG=v${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Display Build Information
+        run: |
+          echo "Application: $APPLICATION_NAME"
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Actor: $GITHUB_ACTOR"
+          echo "Branch: $GITHUB_REF_NAME"
+          echo "Image Tag: $IMAGE_TAG"
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./app
+          push: false
+          tags: ${{ env.DOCKER_USERNAME }}/${{ env.APPLICATION_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Run Container
+        run: |
+          docker run -d \
+            -p 5000:5000 \
+            --name flask-container \
+            $DOCKER_USERNAME/$APPLICATION_NAME:$IMAGE_TAG
+
+      - name: Smoke Test Application
+        run: |
+          sleep 5
+          curl --fail http://localhost:5000
+          curl --fail http://localhost:5000/health
+
+      - name: Push Docker Image To DockerHub
+        if: ${{ success() }}
+        run: |
+          docker push $DOCKER_USERNAME/$APPLICATION_NAME:$IMAGE_TAG
+
+      - name: Collect Container Logs
+        if: ${{ failure() }}
+        run: |
+          docker logs flask-container
+
+      - name: Cleanup Containers
+        if: ${{ always() }}
+        run: |
+          docker rm -f flask-container || true

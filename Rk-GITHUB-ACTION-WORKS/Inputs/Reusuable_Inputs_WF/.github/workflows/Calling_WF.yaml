@@ -1,0 +1,38 @@
+name: Payment Service Deployment
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  run-unit-tests-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute Unit Tests
+        run: |
+          echo "Running payment service unit tests..."
+          echo "All tests passed."
+
+  build-payment-artifacts-job:
+    runs-on: ubuntu-latest
+
+    needs:
+      - run-unit-tests-job
+
+    steps:
+      - name: Build Payment Artifacts
+        run: |
+          echo "Building payment service artifacts..."
+          echo "Artifacts generated successfully."
+
+  deploy-payment-service-job:
+    needs:
+      - build-payment-artifacts-job
+
+    uses: ./.github/workflows/Deploy_reusuable.yaml
+
+    with:
+      application_name: payment-service
+      run_security_scan: true
+      replicas: 5
